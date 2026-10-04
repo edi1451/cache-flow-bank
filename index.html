@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
@@ -100,6 +100,24 @@
             font-size: 18px;
             font-weight: bold;
             text-align: left;
+            margin-top: 20px;
+        }
+        .sync-section {
+            margin-top: 20px;
+            padding: 15px;
+            background: #eef2f7;
+            border-radius: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .sync-section button {
+            background-color: #007bff;
+        }
+        .sync-section button:hover {
+            background-color: #0056b3;
         }
         input[type="checkbox"] {
             width: 18px;
@@ -147,8 +165,18 @@
         <button onclick="addTransaction()">הוסף פריט</button>
     </div>
 
-    <div class="summary-box" id="summaryRow" style="margin-top: 20px;">
+    <div class="summary-box" id="summaryRow">
         יתרת סגירה / העברה לחיסכון: 0 ₪
+    </div>
+
+    <!-- כפתורי גיבוי וסנכרון בין מכשירים -->
+    <div class="sync-section">
+        <span>סנכרון נתונים בין מכשירים (גיבוי):</span>
+        <div>
+            <button onclick="exportData()">ייצוא קובץ גיבוי</button>
+            <input type="file" id="importFile" style="display: none;" accept=".json" onchange="importData(event)">
+            <button onclick="document.getElementById('importFile').click()" style="background-color: #6c757d;">טען קובץ גיבוי</button>
+        </div>
     </div>
 </div>
 
@@ -216,6 +244,45 @@
         saveData();
     }
 
+    // ייצוא נתונים לקובץ
+    function exportData() {
+        const data = {
+            openingBalance: openingBalance,
+            transactions: transactions
+        };
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'cash-flow-backup.json';
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+
+    // ייבוא נתונים מקובץ
+    function importData(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const data = JSON.parse(e.target.result);
+                if (data.openingBalance !== undefined && Array.isArray(data.transactions)) {
+                    openingBalance = data.openingBalance;
+                    transactions = data.transactions;
+                    saveData();
+                    alert("הנתונים נטענו בהצלחה!");
+                } else {
+                    alert("קובץ גיבוי לא תקין.");
+                }
+            } catch (err)  {
+                alert("שגיאה בקריאת הקובץ.");
+            }
+        };
+        reader.readAsText(file);
+    }
+
     function renderApp() {
         let tableBody = document.getElementById('transactionsTable');
         tableBody.innerHTML = '';
@@ -257,4 +324,4 @@
 </script>
 
 </body>
-</html> 
+</html>
