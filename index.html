@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ניהול תזרים מזומנים אישי</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f6f9;
+            margin: 0;
+            padding: 20px;
+            direction: rtl;
+            color: #333;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 20px;
+        }
+        .opening-balance {
+            background: #e9ecef;
+            padding: 12px 15px;
+            border-radius: 6px;
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .opening-balance input {
+            font-size: 16px;
+            padding: 5px;
+            width: 120px;
+            text-align: center;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: center;
+        }
+        th {
+            background-color: #f8f9fa;
+            color: #495057;
+        }
+        .income {
+            color: #0056b3;
+            font-weight: bold;
+        }
+        .expense {
+            color: #d9534f;
+            font-weight: bold;
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr auto;
+            gap: 10px;
+            background: #fdfdfe;
+            padding: 15px;
+            border: 1px dashed #ccc;
+            border-radius: 6px;
+            align-items: center;
+        }
+        input, select, button {
+            padding: 8px;
+            font-size: 14px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        .delete-btn {
+            background-color: #dc3545;
+            padding: 5px 10px;
+        }
+        .delete-btn:hover {
+            background-color: #c82333;
+        }
+        .summary-box {
+            background: #e2e3e5;
+            padding: 15px;
+            border-radius: 6px;
+            font-size: 18px;
+            font-weight: bold;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>תזרים מזומנים חודשי</h1>
+
+    <!-- יתרת פתיחה -->
+    <div class="opening-balance">
+        <span>יתרת פתיחה:</span>
+        <div>
+            <span id="displayOpening">0</span> ₪
+            <button onclick="editOpeningBalance()" style="margin-right: 10px; padding: 3px 8px; font-size: 12px;">ערוך</button>
+        </div>
+    </div>
+
+    <!-- טבלת התנועות -->
+    <table>
+        <thead>
+            <tr>
+                <th>תאריך (30 יום)</th>
+                <th>שם הפריט / משתנה</th>
+                <th>סוג</th>
+                <th>סכום (₪)</th>
+                <th>פעולות</th>
+            </tr>
+        </thead>
+        <tbody id="transactionsTable">
+            <!-- נתונים יתוספו דינמית -->
+        </tbody>
+    </table>
+
+    <!-- הוספת שורה חדשה -->
+    <div class="form-row">
+        <input type="date" id="itemDate">
+        <input type="text" id="itemName" placeholder="שם הפריט (למשל: משכורת, שכירות)">
+        <select id="itemType">
+            <option value="income">זכות (הכנסה)</option>
+            <option value="expense">חובה (הוצאה)</option>
+        </select>
+        <input type="number" id="itemAmount" placeholder="סכום בשלמים" step="1">
+        <button onclick="addTransaction()">הוסף פריט</button>
+    </div>
+
+    <!-- שורה מסכמת / העברה לחיסכון -->
+    <div class="summary-box" id="summaryRow" style="margin-top: 20px;">
+        יתרת סגירה / העברה לחיסכון: 0 ₪
+    </div>
+</div>
+
+<script>
+    let openingBalance = parseInt(localStorage.getItem('openingBalance')) || 0;
+    let transactions = JSON.parse(localStorage.getItem('transactions')) || [];
+
+    document.getElementById('displayOpening').innerText = openingBalance;
+    
+    // הגדרת תאריך ברירת מחדל להיום
+    document.getElementById('itemDate').valueAsDate = new Date();
+
+    function saveData() {
+        localStorage.setItem('openingBalance', openingBalance);
+        localStorage.setItem('transactions', JSON.stringify(transactions));
+        renderApp();
+    }
+
+    function editOpeningBalance() {
+        let newBalance = prompt("הכנס יתרת פתיחה מעודכנת (בשלאמים בלבד):", openingBalance);
+        if (newBalance !== null && !isNaN(newBalance)) {
+            openingBalance = Math.round(Number(newBalance));
+            saveData();
+        }
+    }
+
+    function addTransaction() {
+        let date = document.getElementById('itemDate').value;
+        let name = document.getElementById('itemName').value.trim();
+        let type = document.getElementById('itemType').value;
+        let amount = document.getElementById('itemAmount').value;
+
+        if (!date || !name || !amount) {
+            alert("אנא מלא את כל השדות");
+            return;
+        }
+
+        let transaction = {
+            id: Date.now(),
+            date: date,
+            name: name,
+            type: type,
+            amount: Math.round(Number(amount))
+        };
+
+        transactions.push(transaction);
+        // מיון לפי תאריך
+        transactions.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+        document.getElementById('itemName').value = '';
+        document.getElementById('itemAmount').value = '';
+
+        saveData();
+    }
+
+    function deleteTransaction(id) {
+        transactions = transactions.filter(t => t.id !== id);
+        saveData();
+    }
+
+    function renderApp() {
+        let tableBody = document.getElementById('transactionsTable');
+        tableBody.innerHTML = '';
+
+        let totalIncome = 0;
+        let totalExpense = 0;
+
+        transactions.forEach(t => {
+            if (t.type === 'income') {
+                totalIncome += t.amount;
+            } else {
+                totalExpense += t.amount;
+            }
+
+            let row = document.createElement('tr');
+            let formattedAmount = t.amount.toLocaleString();
+            let amountClass = t.type === 'income' ? 'income' : 'expense';
+            let signPrefix = t.type === 'income' ? '+' : '-';
+
+            row.innerHTML = `
+                <td>${t.date}</td>
+                <td>${t.name}</td>
+                <td>${t.type === 'income' ? 'זכות (הכנסה)' : 'חובה (הוצאה)'}</td>
+                <td class="${amountClass}">${signPrefix}${formattedAmount} ₪</td>
+                <td><button class="delete-btn" onclick="deleteTransaction(${t.id})">מחק</button></td>
+            `;
+            tableBody.appendChild(row);
+        });
+
+        document.getElementById('displayOpening').innerText = openingBalance.toLocaleString();
+        
+        let finalSavings = openingBalance + totalIncome - totalExpense;
+        let summaryBox = document.getElementById('summaryRow');
+        summaryBox.innerHTML = `יתרת סגירה / העברה לחיסכון: <span class="${finalSavings >= 0 ? 'income' : 'expense'}">${finalSavings.toLocaleString()} ₪</span>`;
+    }
+
+    // הפעלה ראשונית
+    renderApp();
+</script>
+
+</body>
+</html>
