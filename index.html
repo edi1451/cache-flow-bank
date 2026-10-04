@@ -37,12 +37,6 @@
             justify-content: space-between;
             align-items: center;
         }
-        .opening-balance input {
-            font-size: 16px;
-            padding: 5px;
-            width: 120px;
-            text-align: center;
-        }
         table {
             width: 100%;
             border-collapse: collapse;
@@ -67,7 +61,7 @@
         }
         .form-row {
             display: grid;
-            grid-template-columns: 1fr 1fr 1fr 1fr auto;
+            grid-template-columns: 1fr 1.5fr 1fr 1fr auto;
             gap: 10px;
             background: #fdfdfe;
             padding: 15px;
@@ -94,6 +88,7 @@
         .delete-btn {
             background-color: #dc3545;
             padding: 5px 10px;
+            margin-right: 5px;
         }
         .delete-btn:hover {
             background-color: #c82333;
@@ -105,6 +100,11 @@
             font-size: 18px;
             font-weight: bold;
             text-align: left;
+        }
+        input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
         }
     </style>
 </head>
@@ -126,10 +126,11 @@
     <table>
         <thead>
             <tr>
-                <th>תאריך (30 יום)</th>
-                <th>שם הפריט / משתנה</th>
+                <th>תאריך</th>
+                <th>שם פריט</th>
                 <th>סוג</th>
-                <th>סכום (₪)</th>
+                <th>סכום</th>
+                <th>בוצע (X)</th>
                 <th>פעולות</th>
             </tr>
         </thead>
@@ -141,16 +142,16 @@
     <!-- הוספת שורה חדשה -->
     <div class="form-row">
         <input type="date" id="itemDate">
-        <input type="text" id="itemName" placeholder="שם הפריט (למשל: משכורת, שכירות)">
+        <input type="text" id="itemName" placeholder="שם הפריט">
         <select id="itemType">
-            <option value="income">זכות (הכנסה)</option>
-            <option value="expense">חובה (הוצאה)</option>
+            <option value="income">הכנסה (זכות)</option>
+            <option value="expense">הוצאה (חובה)</option>
         </select>
         <input type="number" id="itemAmount" placeholder="סכום בשלמים" step="1">
         <button onclick="addTransaction()">הוסף פריט</button>
     </div>
 
-    <!-- שורה מסכמת / העברה לחיסכון -->
+    <!-- שורה מסכמת -->
     <div class="summary-box" id="summaryRow" style="margin-top: 20px;">
         יתרת סגירה / העברה לחיסכון: 0 ₪
     </div>
@@ -161,8 +162,6 @@
     let transactions = JSON.parse(localStorage.getItem('transactions')) || [];
 
     document.getElementById('displayOpening').innerText = openingBalance;
-    
-    // הגדרת תאריך ברירת מחדל להיום
     document.getElementById('itemDate').valueAsDate = new Date();
 
     function saveData() {
@@ -172,7 +171,7 @@
     }
 
     function editOpeningBalance() {
-        let newBalance = prompt("הכנס יתרת פתיחה מעודכנת (בשלאמים בלבד):", openingBalance);
+        let newBalance = prompt("הכנס יתרת פתיחה מעודכנת (בשלמים בלבד):", openingBalance);
         if (newBalance !== null && !isNaN(newBalance)) {
             openingBalance = Math.round(Number(newBalance));
             saveData();
@@ -195,17 +194,25 @@
             date: date,
             name: name,
             type: type,
-            amount: Math.round(Number(amount))
+            amount: Math.round(Number(amount)),
+            completed: false
         };
 
         transactions.push(transaction);
-        // מיון לפי תאריך
         transactions.sort((a, b) => new Date(a.date) - new Date(b.date));
 
         document.getElementById('itemName').value = '';
         document.getElementById('itemAmount').value = '';
 
         saveData();
+    }
+
+    function toggleComplete(id) {
+        let t = transactions.find(item => item.id === id);
+        if (t) {
+            t.completed = !t.completed;
+            saveData();
+        }
     }
 
     function deleteTransaction(id) {
@@ -235,8 +242,9 @@
             row.innerHTML = `
                 <td>${t.date}</td>
                 <td>${t.name}</td>
-                <td>${t.type === 'income' ? 'זכות (הכנסה)' : 'חובה (הוצאה)'}</td>
+                <td>${t.type === 'income' ? 'הכנסה (זכות)' : 'הוצאה (חובה)'}</td>
                 <td class="${amountClass}">${signPrefix}${formattedAmount} ₪</td>
+                <td><input type="checkbox" ${t.completed ? 'checked' : ''} onclick="toggleComplete(${t.id})"></td>
                 <td><button class="delete-btn" onclick="deleteTransaction(${t.id})">מחק</button></td>
             `;
             tableBody.appendChild(row);
@@ -249,7 +257,6 @@
         summaryBox.innerHTML = `יתרת סגירה / העברה לחיסכון: <span class="${finalSavings >= 0 ? 'income' : 'expense'}">${finalSavings.toLocaleString()} ₪</span>`;
     }
 
-    // הפעלה ראשונית
     renderApp();
 </script>
 
