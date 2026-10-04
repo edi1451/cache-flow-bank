@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
@@ -113,7 +113,6 @@
 <div class="container">
     <h1>תזרים מזומנים חודשי</h1>
 
-    <!-- יתרת פתיחה -->
     <div class="opening-balance">
         <span>יתרת פתיחה:</span>
         <div>
@@ -122,7 +121,6 @@
         </div>
     </div>
 
-    <!-- טבלת התנועות -->
     <table>
         <thead>
             <tr>
@@ -135,11 +133,9 @@
             </tr>
         </thead>
         <tbody id="transactionsTable">
-            <!-- נתונים יתוספו דינמית -->
         </tbody>
     </table>
 
-    <!-- הוספת שורה חדשה -->
     <div class="form-row">
         <input type="date" id="itemDate">
         <input type="text" id="itemName" placeholder="שם הפריט">
@@ -151,7 +147,6 @@
         <button onclick="addTransaction()">הוסף פריט</button>
     </div>
 
-    <!-- שורה מסכמת -->
     <div class="summary-box" id="summaryRow" style="margin-top: 20px;">
         יתרת סגירה / העברה לחיסכון: 0 ₪
     </div>
@@ -162,7 +157,8 @@
     let transactions = JSON.parse(localStorage.getItem('transactions')) || [];
 
     document.getElementById('displayOpening').innerText = openingBalance;
-    document.getElementById('itemDate').valueAsDate = new Date();
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('itemDate').value = today;
 
     function saveData() {
         localStorage.setItem('openingBalance', openingBalance);
@@ -261,4 +257,4 @@
 </script>
 
 </body>
-</html>
+</html> 
